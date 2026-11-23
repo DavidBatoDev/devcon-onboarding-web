@@ -642,11 +642,6 @@ const Landing: React.FC = () => {
                     type="text"
                     className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                     placeholder="Juan Dela Cruz"
-                    onChange={(e) => {
-                      if (e.target.value.toLowerCase() === "reembed") {
-                        navigate("/admin/reembed");
-                      }
-                    }}
                   />
                 </div>
                 <div>
