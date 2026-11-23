@@ -92,6 +92,10 @@ const ChatInterface: React.FC = () => {
     const botMessageId = `bot-${Date.now()}`;
     let created = false;
     let sawError: string | null = null;
+    // NDJSON streams always end with `done`; a stream that just stops (e.g. a
+    // gateway timeout) is treated as a failure so the non-streaming fallback runs.
+    let sawMeta = false;
+    let sawDone = false;
     // `meta` arrives immediately (before retrieval); `sources`/`token` only
     // after retrieval + first token (~2-4s). We stash meta and DON'T create
     // the bubble yet, so the typing indicator stays up during that gap —
@@ -123,6 +127,7 @@ const ChatInterface: React.FC = () => {
         case "meta":
           // Keep the typing indicator; create the bubble on first content.
           pendingRequestId = evt.request_id;
+          sawMeta = true;
           break;
         case "sources":
           // Stash — sources/badge are only revealed once the answer completes.
@@ -143,6 +148,7 @@ const ChatInterface: React.FC = () => {
           );
           break;
         case "done":
+          sawDone = true;
           // Answer complete — swap in the sanitized text AND reveal sources +
           // badge together (so citation chips have targets to scroll to).
           ensureBubble();
@@ -171,6 +177,7 @@ const ChatInterface: React.FC = () => {
     try {
       await streamMessageToBot(text, history, onEvent, controller.signal, nocache);
       if (sawError) throw new Error(sawError);
+      if (sawMeta && !sawDone) throw new Error("The answer stream ended before completion");
       if (!created) {
         ensureBubble();
         patchMessage(botMessageId, { content: "⚠️ No answer provided." });
